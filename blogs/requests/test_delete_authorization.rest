@@ -1,0 +1,56 @@
+### Test 1: Delete blog without token (should fail - 401)
+DELETE http://localhost:3001/api/blogs/1
+
+### Expected response
+# HTTP/1.1 401 Unauthorized
+# {
+#   "error": "token missing"
+# }
+
+###
+
+### Test 2: Delete blog with invalid token (should fail - 401)
+DELETE http://localhost:3001/api/blogs/1
+Authorization: bearer invalid_token
+
+### Expected response
+# HTTP/1.1 401 Unauthorized
+# {
+#   "error": "token invalid"
+# }
+
+###
+
+### Test 3: Delete blog created by another user (should fail - 403)
+# First, get a token for a user who didn't create the blog
+# Then try to delete it
+DELETE http://localhost:3001/api/blogs/1
+Authorization: bearer <other_user_token>
+
+### Expected response
+# HTTP/1.1 403 Forbidden
+# {
+#   "error": "only the creator can delete this blog"
+# }
+
+###
+
+### Test 4: Delete own blog (should succeed - 204)
+# Use the token of the user who created the blog
+DELETE http://localhost:3001/api/blogs/1
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im5pY2siLCJpZCI6MSwiaWF0IjoxNzY0MTk5ODI2fQ.LoML1nW_ZTDkVg19fxf61xjxGBABJCPjQ0TR8yAWDPM
+
+### Expected response
+# HTTP/1.1 204 No Content
+
+###
+
+### Test 5: Try to delete non-existent blog (should fail - 404)
+DELETE http://localhost:3001/api/blogs/999999
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im5pY2siLCJpZCI6MSwiaWF0IjoxNzY0MTk5ODI2fQ.LoML1nW_ZTDkVg19fxf61xjxGBABJCPjQ0TR8yAWDPM
+
+### Expected response
+# HTTP/1.1 404 Not Found
+# {
+#   "error": "blog not found"
+# }

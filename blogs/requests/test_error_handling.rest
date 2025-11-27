@@ -1,0 +1,77 @@
+### Test 1: Create blog with missing required fields (should trigger validation error)
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im5pY2siLCJpZCI6MSwiaWF0IjoxNzY0MTk5ODI2fQ.LoML1nW_ZTDkVg19fxf61xjxGBABJCPjQ0TR8yAWDPM
+
+{
+  "likes": 5
+}
+
+### Expected response
+# HTTP/1.1 400 Bad Request
+# (Database validation error - missing author, title, url)
+
+###
+
+### Test 2: Create blog with invalid token (should trigger JWT error)
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+Authorization: bearer invalid_token_here
+
+{
+  "author": "Nick",
+  "title": "Test blog",
+  "url": "http://test.com"
+}
+
+### Expected response
+# HTTP/1.1 401 Unauthorized
+# {
+#   "error": "token invalid"
+# }
+
+###
+
+### Test 3: Create blog without token (should trigger missing token error)
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+
+{
+  "author": "Nick",
+  "title": "Test blog",
+  "url": "http://test.com"
+}
+
+### Expected response
+# HTTP/1.1 401 Unauthorized
+# {
+#   "error": "token missing"
+# }
+
+###
+
+### Test 4: Update blog likes with invalid ID (should trigger database error)
+PUT http://localhost:3001/api/blogs/999999999999999
+Content-Type: application/json
+
+{
+  "likes": 10
+}
+
+### Expected response
+# HTTP/1.1 500 Internal Server Error
+# (Database error - invalid ID format or blog not found)
+
+###
+
+### Test 5: Update blog likes with non-numeric ID (should trigger database error)
+PUT http://localhost:3001/api/blogs/not-a-number
+Content-Type: application/json
+
+{
+  "likes": 10
+}
+
+### Expected response
+# HTTP/1.1 500 Internal Server Error
+# (Database error - invalid ID type)

@@ -1,0 +1,57 @@
+GET http://localhost:3001/api/users
+### Expected response
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+###
+
+GET http://localhost:3001/api/users
+
+POST http://localhost:3001/api/users
+Content-Type: application/json
+
+{
+  "name": "Nick",
+  "username": "nick",
+  "password": "password123"
+}
+
+### Expected response
+HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+
+{
+  "id": 1,
+  "name": "Nick",
+  "username": "nick"
+}
+
+###
+
+POST http://localhost:3001/api/users
+Content-Type: application/json 
+
+{
+  "name": "Alice",
+  "username": "alice@mail.com",
+  "password": "securepass"
+}
+
+###
+
+PUT http://localhost:3001/api/users/nick
+Content-Type: application/json
+
+{
+  "username": "nicko"
+}
+
+### Expect:ed response
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "id": 1,
+  "name": "Nick Updated",
+  "username": "nick"
+}

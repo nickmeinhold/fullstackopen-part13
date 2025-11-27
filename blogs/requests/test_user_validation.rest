@@ -1,0 +1,56 @@
+### Test 1: Create user with valid email username (should succeed)
+POST http://localhost:3001/api/users
+Content-Type: application/json
+
+{
+  "username": "test@example.com",
+  "name": "Test User"
+}
+
+### Expected response
+# HTTP/1.1 200 OK
+# {
+#   "id": 3,
+#   "username": "test@example.com",
+#   "name": "Test User",
+#   "created_at": "...",
+#   "updated_at": "..."
+# }
+
+###
+
+### Test 2: Create user with invalid username (not an email)
+POST http://localhost:3001/api/users
+Content-Type: application/json
+
+{
+  "username": "invalid-username",
+  "name": "Invalid User"
+}
+
+### Expected response
+# HTTP/1.1 400 Bad Request
+# {
+#   "error": [
+#     "Validation isEmail on username failed"
+#   ]
+# }
+
+###
+
+### Test 3: Create user with duplicate email
+POST http://localhost:3001/api/users
+Content-Type: application/json
+
+{
+  "username": "nick@example.com",
+  "name": "Duplicate Nick"
+}
+
+### Expected response (if nick@example.com already exists)
+# HTTP/1.1 400 Bad Request
+# {
+#   "error": [
+#     "username must be unique"
+#   ]
+# }
