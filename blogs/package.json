@@ -10,7 +10,8 @@
     "dev": "node --watch index.js",
     "start": "node index.js",
     "test": "NODE_ENV=test jest --verbose --runInBand",
-    "test:watch": "NODE_ENV=test jest --watch --verbose"
+    "test:watch": "NODE_ENV=test jest --watch --verbose",
+    "seed": "node utils/seed.js"
   },
   "jest": {
     "testEnvironment": "node",
