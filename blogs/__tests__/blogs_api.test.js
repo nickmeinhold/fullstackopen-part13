@@ -2,7 +2,7 @@ const supertest = require('supertest');
 const express = require('express');
 const { sequelize } = require('../utils/db');
 const blogsRouter = require('../controllers/blogs');
-const { Blog, User, syncModels } = require('../models');
+const { Blog, User } = require('../models');
 const helper = require('./test_helper');
 
 const app = express();
@@ -12,7 +12,6 @@ app.use('/api/blogs', blogsRouter);
 const api = supertest(app);
 
 beforeAll(async () => {
-  await syncModels();
   await sequelize.sync({ force: true });
 });
 
@@ -230,6 +229,73 @@ describe('POST /api/blogs', () => {
       .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(400);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    expect(blogsAtEnd).toHaveLength(0);
+  });
+
+  test('can add a blog with a valid year', async () => {
+    const newBlog = {
+      author: 'Test Author',
+      title: 'Test Blog',
+      url: 'http://test.com',
+      year: 2020
+    };
+
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+
+    expect(response.body.year).toBe(2020);
+
+    const blogsAtEnd = await helper.blogsInDb();
+    expect(blogsAtEnd).toHaveLength(1);
+    expect(blogsAtEnd[0].year).toBe(2020);
+  });
+
+  test('fails with status 400 if year is less than 1991', async () => {
+    const newBlog = {
+      author: 'Test Author',
+      title: 'Test Blog',
+      url: 'http://test.com',
+      year: 1990
+    };
+
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(400);
+
+    expect(response.body.error).toEqual(
+      expect.arrayContaining([expect.stringContaining('Year must be at least 1991')])
+    );
+
+    const blogsAtEnd = await helper.blogsInDb();
+    expect(blogsAtEnd).toHaveLength(0);
+  });
+
+  test('fails with status 400 if year is greater than current year', async () => {
+    const currentYear = new Date().getFullYear();
+    const newBlog = {
+      author: 'Test Author',
+      title: 'Test Blog',
+      url: 'http://test.com',
+      year: currentYear + 1
+    };
+
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(400);
+
+    expect(response.body.error).toEqual(
+      expect.arrayContaining([expect.stringContaining(`Year cannot be greater than ${currentYear}`)])
+    );
 
     const blogsAtEnd = await helper.blogsInDb();
     expect(blogsAtEnd).toHaveLength(0);
