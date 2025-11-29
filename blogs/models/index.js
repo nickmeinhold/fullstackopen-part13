@@ -2,15 +2,9 @@ const Blog = require("./blog");
 const User = require("./user");
 
 User.hasMany(Blog);
-Blog.belongsTo(User, { as: 'User' });
-
-const syncModels = async () => {
-  await User.sync({ alter: true });
-  await Blog.sync({ alter: true });
-};
+Blog.belongsTo(User, { as: "User" });
 
 module.exports = {
   Blog,
   User,
-  syncModels,
 };

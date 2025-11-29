@@ -11,7 +11,8 @@
     "start": "node index.js",
     "test": "NODE_ENV=test jest --verbose --runInBand",
     "test:watch": "NODE_ENV=test jest --watch --verbose",
-    "seed": "node utils/seed.js"
+    "seed": "node utils/seed.js",
+    "migration:down": "node utils/rollback.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -29,7 +30,8 @@
     "express-async-errors": "^3.1.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "umzug": "^3.8.2"
   },
   "devDependencies": {
     "jest": "^30.2.0",
