@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const { Blog, User } = require("../models");
 const { SECRET } = require("../utils/config");
-const { where } = require("sequelize");
+const { Op } = require("sequelize");
 
 const tokenExtractor = (req, res, next) => {
   const authorization = req.get("authorization");
@@ -30,22 +30,26 @@ router.get("/", async (req, res) => {
     where[Op.or] = [
       {
         title: {
-          [Op.substring]: req.query.search,
+          [Op.iLike]: `%${req.query.search}%`,
         },
       },
       {
         author: {
-          [Op.substring]: req.query.search,
+          [Op.iLike]: `%${req.query.search}%`,
         },
       },
     ];
   }
 
+  orderBy = [["likes", "DESC"]];
+
   const blogs = await Blog.findAll({
     where,
+    order: orderBy,
     attributes: { exclude: ["userId"] },
     include: {
       model: User,
+      as: 'User',
       attributes: ["name"],
     },
   });
@@ -67,12 +71,12 @@ router.post("/", tokenExtractor, async (req, res) => {
   }
 });
 
-const blogFinder = async (req, _res, next) => {
+const blogFinder = async (req, res, next) => {
   try {
     req.blog = await Blog.findByPk(req.params.id);
     next();
   } catch (error) {
-    next(error);
+    return res.status(400).json({ error: 'invalid id' });
   }
 };
 
