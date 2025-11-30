@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
   res.json(blogs);
 });
 
-router.post("/", tokenExtractor, async (req, res) => {
+router.post("/", tokenExtractor, async (req, res, next) => {
   try {
     const user = await User.findByPk(req.decodedToken.id);
     const blog = await Blog.create({
@@ -66,8 +66,7 @@ router.post("/", tokenExtractor, async (req, res) => {
     });
     res.json(blog);
   } catch (error) {
-    console.log(error);
-    return res.status(400).json({ error });
+    next(error);
   }
 });
 

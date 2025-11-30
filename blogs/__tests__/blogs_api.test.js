@@ -1,13 +1,22 @@
+require('express-async-errors');
 const supertest = require('supertest');
 const express = require('express');
 const { sequelize } = require('../utils/db');
+const errorHandler = require('../middleware/errorHandler');
 const blogsRouter = require('../controllers/blogs');
+const usersRouter = require('../controllers/users');
+const readinglistsRouter = require('../controllers/readinglists');
 const { Blog, User } = require('../models');
 const helper = require('./test_helper');
 
 const app = express();
 app.use(express.json());
 app.use('/api/blogs', blogsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/readinglists', readinglistsRouter);
+
+// Error handling middleware
+app.use(errorHandler);
 
 const api = supertest(app);
 
@@ -443,5 +452,139 @@ describe('DELETE /api/blogs/:id', () => {
       .delete(`/api/blogs/${nonExistentId}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(404);
+  });
+});
+
+describe('Reading lists', () => {
+  let user;
+  let anotherUser;
+  let blog;
+  let token;
+  let anotherToken;
+
+  beforeEach(async () => {
+    await helper.resetDatabase();
+
+    user = await helper.createTestUser({ username: 'user@example.com', name: 'Test User' });
+    anotherUser = await helper.createTestUser({ username: 'another@example.com', name: 'Another User' });
+    blog = await Blog.create({ userId: user.id, title: 'Test Blog', author: 'Test Author', url: 'http://test.com' });
+
+    token = helper.getTokenForUser(user);
+    anotherToken = helper.getTokenForUser(anotherUser);
+  });
+
+  describe('POST /api/readinglists', () => {
+    test('can add a blog to reading list with valid token', async () => {
+      const response = await api
+        .post('/api/readinglists')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blogId: blog.id })
+        .expect(200)
+        .expect('Content-Type', /application\/json/);
+
+      expect(response.body).toMatchObject({
+        userId: user.id,
+        blogId: blog.id,
+        read: false
+      });
+      expect(response.body.id).toBeDefined();
+    });
+
+    test('fails with status 401 if token is missing', async () => {
+      await api
+        .post('/api/readinglists')
+        .send({ blogId: blog.id })
+        .expect(401);
+    });
+
+    test('reading list appears in users endpoint', async () => {
+      await api
+        .post('/api/readinglists')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blogId: blog.id });
+
+      const response = await api
+        .get('/api/users')
+        .expect(200);
+
+      const userWithReadingList = response.body.find(u => u.id === user.id);
+      expect(userWithReadingList.readings).toHaveLength(1);
+      expect(userWithReadingList.readings[0]).toMatchObject({
+        id: blog.id,
+        title: 'Test Blog'
+      });
+      expect(userWithReadingList.readings[0].reading_list).toMatchObject({
+        read: false
+      });
+    });
+  });
+
+  describe('PUT /api/readinglists/:id', () => {
+    let readingListEntry;
+
+    beforeEach(async () => {
+      const response = await api
+        .post('/api/readinglists')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ blogId: blog.id });
+      readingListEntry = response.body;
+    });
+
+    test('can mark blog as read', async () => {
+      const response = await api
+        .put(`/api/readinglists/${readingListEntry.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ read: true })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: readingListEntry.id,
+        userId: user.id,
+        blogId: blog.id,
+        read: true
+      });
+    });
+
+    test('can mark blog as unread', async () => {
+      // First mark as read
+      await api
+        .put(`/api/readinglists/${readingListEntry.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ read: true });
+
+      // Then mark as unread
+      const response = await api
+        .put(`/api/readinglists/${readingListEntry.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ read: false })
+        .expect(200);
+
+      expect(response.body.read).toBe(false);
+    });
+
+    test('fails with status 401 if token is missing', async () => {
+      await api
+        .put(`/api/readinglists/${readingListEntry.id}`)
+        .send({ read: true })
+        .expect(401);
+    });
+
+    test('fails with status 403 if user is not the owner', async () => {
+      await api
+        .put(`/api/readinglists/${readingListEntry.id}`)
+        .set('Authorization', `Bearer ${anotherToken}`)
+        .send({ read: true })
+        .expect(403);
+    });
+
+    test('fails with status 404 if reading list entry does not exist', async () => {
+      const nonExistentId = 99999;
+
+      await api
+        .put(`/api/readinglists/${nonExistentId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ read: true })
+        .expect(404);
+    });
   });
 });
