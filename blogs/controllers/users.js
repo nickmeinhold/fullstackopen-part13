@@ -28,22 +28,33 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
+  // Build the readings include options
+  const readingsInclude = {
+    model: Blog,
+    as: "readings",
+    attributes: { exclude: ["userId"] },
+    through: {
+      attributes: ["id", "read"],
+    },
+  };
+
+  // Add where clause if read parameter is provided
+  if (req.query.read !== undefined) {
+    readingsInclude.through.where = {
+      read: req.query.read === 'true'
+    };
+  }
+
   const user = await User.findByPk(req.params.id, {
     include: [
       {
         model: Blog,
         attributes: { exclude: ["userId"] },
       },
-      {
-        model: Blog,
-        as: "readings",
-        attributes: { exclude: ["userId"] },
-        through: {
-          attributes: ["id", "read"],
-        },
-      },
+      readingsInclude,
     ],
   });
+
   if (user) {
     res.json(user);
   } else {
