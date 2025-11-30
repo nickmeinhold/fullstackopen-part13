@@ -1,25 +1,10 @@
 const router = require("express").Router();
-const jwt = require("jsonwebtoken");
 
 const { ReadingList } = require("../models");
-const { SECRET } = require("../utils/config");
-
-const tokenExtractor = (req, res, next) => {
-  const authorization = req.get("authorization");
-  if (authorization && authorization.toLowerCase().startsWith("bearer ")) {
-    try {
-      req.decodedToken = jwt.verify(authorization.substring(7), SECRET);
-    } catch (error) {
-      return res.status(401).json({ error: "token invalid" });
-    }
-  } else {
-    return res.status(401).json({ error: "token missing" });
-  }
-  next();
-};
+const sessionValidator = require("../middleware/sessionValidator");
 
 // Add blog to reading list
-router.post("/", tokenExtractor, async (req, res) => {
+router.post("/", sessionValidator, async (req, res) => {
   const { blogId } = req.body;
 
   const readingList = await ReadingList.create({
@@ -32,7 +17,7 @@ router.post("/", tokenExtractor, async (req, res) => {
 });
 
 // Mark blog as read
-router.put("/:id", tokenExtractor, async (req, res) => {
+router.put("/:id", sessionValidator, async (req, res) => {
   const readingListEntry = await ReadingList.findByPk(req.params.id);
 
   if (!readingListEntry) {
