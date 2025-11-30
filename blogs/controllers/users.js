@@ -11,10 +11,10 @@ router.get("/", async (req, res) => {
       },
       {
         model: Blog,
-        as: 'readings',
+        as: "readings",
         attributes: { exclude: ["userId"] },
         through: {
-          attributes: ['id', 'read'],
+          attributes: ["id", "read"],
         },
       },
     ],
@@ -36,10 +36,10 @@ router.get("/:id", async (req, res) => {
       },
       {
         model: Blog,
-        as: 'readings',
+        as: "readings",
         attributes: { exclude: ["userId"] },
         through: {
-          attributes: [],
+          attributes: ["id", "read"],
         },
       },
     ],
